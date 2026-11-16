@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>George Russell Memory Match</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: turquoise;
+            --text-color: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+            font-size: 2rem;
+            letter-spacing: 1px;
+            text-align: center;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: #94a3b8;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button.btn {
+            background-color: #334155;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button.btn:hover, button.btn.active {
+            background-color: #0ea5e9;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.5);
+        }
+
+        .george-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            max-width: 550px;
+            width: 100%;
+            background: rgba(30, 41, 59, 0.8);
+            padding: 15px 20px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            box-sizing: border-box;
+        }
+
+        .george-avatar {
+            width: 85px;
+            height: 85px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 3px solid #0ea5e9;
+            flex-shrink: 0;
+            background-color: white;
+        }
+
+        .speech-bubble {
+            position: relative;
+            background: #f1f5f9;
+            color: #0f172a;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.4;
+            flex-grow: 1;
+            box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 7px 10px 7px 0;
+            border-style: solid;
+            border-color: transparent #f1f5f9 transparent transparent;
+        }
+
+        .game-board {
+            display: grid;
+            gap: 10px;
+            max-width: 650px;
+            width: 100%;
+            justify-content: center;
+            display: none;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.4s ease;
+            box-shadow: 0 5px 8px rgba(0,0,0,0.3);
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #475569, #1e293b);
+            color: #94a3b8;
+            font-size: 1.6rem;
+            font-weight: 800;
+            border: 2px solid #57687c;
+        }
+
+        .card-back {
+            background-color: #fff;
+            transform: rotateY(180deg);
+        }
+
+        .card-back img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .stats {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #94a3b8;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>George Russell Memory Match</h1>
+    <div class="subtitle">Immaculate focus, immaculate vibes.</div>
+
+    <div class="controls">
+        <button class="btn" onclick="startGame(3)">Easy (3x4)</button>
+        <button class="btn" onclick="startGame(4)">Medium (4x4)</button>
+        <button class="btn" onclick="startGame(5)">Hard (5x4)</button>
+    </div>
+
+    <div class="george-container">
+        <img src="images/chibi_george.png" alt="Mini George Chibi" class="george-avatar" id="georgeAvatar" onerror="this.src='images/george3.jpg';">
+        <div class="speech-bubble" id="speechBubble">Hi, darling! Ready to show some immaculate focus?</div>
+    </div>
+
+    <div class="game-board" id="gameBoard"></div>
+
+    <div class="stats" id="stats">Moves: 0</div>
+
+    <script>
+        const allPhotos = [];
+        for (let i = 3; i <= 19; i++) {
+            allPhotos.push(`images/george${i}.jpg`);
+        }
+
+        const quotes = {
+            start: [
+                { text: "Hi, darling! Ready to show some immaculate focus?", sound: "sounds/start1.mp3" },
+                { text: "Brilliant. Let's make sure everything is polished and under control.", sound: "sounds/start2.mp3" }
+            ],
+            match: [
+                { text: "Absolute P1 performance. Pure precision.", sound: "sounds/match1.mp3" },
+                { text: "Magnificent. In perfect harmony.", sound: "sounds/match2.mp3" }
+            ],
+            error: [
+                { text: "It lashes out with unnecessary anger and borderline violence...", sound: "sounds/error1.mp3" },
+                { text: "Crikey! That was not ideal.", sound: "sounds/error2.mp3" }
+            ],
+            win: [
+                { text: "Incredible scenes! P1, P2. Time to celebrate with a nice cup of tea.", sound: "sounds/win.mp3" }
+            ]
+        };
+
+        let gridCols = 4;
+        let totalPairs = 8; 
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let isLocked = false;
+        let currentAudio = null;
+
+        // Лічильники для контролю частоти фраз
+        let matchCounter = 0;
+        let errorCounter = 0;
+
+        function playSound(soundPath) {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            currentAudio = new Audio(soundPath);
+            currentAudio.volume = 0.7;
+            currentAudio.play().catch(e => console.log("Audio play error:", e));
+        }
+
+        function speak(category) {
+            const list = quotes[category];
+            const randomItem = list[Math.floor(Math.random() * list.length)];
+            document.getElementById('speechBubble').innerText = randomItem.text;
+            if (randomItem.sound) {
+                playSound(randomItem.sound);
+            }
+        }
+
+        // Вітання одразу при відкритті сайту
+        window.onload = () => {
+            speak('start');
+        };
+
+        function startGame(cols) {
+            document.getElementById('gameBoard').style.display = 'grid';
+            document.getElementById('stats').style.display = 'block';
+
+            document.querySelectorAll('.controls .btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = Array.from(document.querySelectorAll('.controls .btn')).find(btn => btn.innerText.includes(cols === 3 ? 'Easy' : cols === 4 ? 'Medium' : 'Hard'));
+            if(activeBtn) activeBtn.classList.add('active');
+
+            gridCols = cols;
+            if (cols === 3) totalPairs = 6;
+            if (cols === 4) totalPairs = 8;
+            if (cols === 5) totalPairs = 10;
+
+            matchCounter = 0;
+            errorCounter = 0;
+            initGame();
+
+            // При виборі рівня Джордж мовчить або просто налаштовує фокус (без рандомного крику)
+            document.getElementById('speechBubble').innerText = "Focus on the cards, darling. Let's do this.";
+        }
+
+        function initGame() {
+            matchedPairs = 0;
+            moves = 0;
+            flippedCards = [];
+            isLocked = false;
+            document.getElementById('stats').innerText = `Moves: ${moves}`;
+
+            let shuffledPhotos = [...allPhotos].sort(() => 0.5 - Math.random());
+            let selectedPhotos = shuffledPhotos.slice(0, totalPairs);
+
+            cards = [...selectedPhotos, ...selectedPhotos]
+                .sort(() => 0.5 - Math.random())
+                .map((img, index) => ({ id: index, img: img, matched: false }));
+
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('gameBoard');
+            board.style.gridTemplateColumns = `repeat(${gridCols}, 1fr)`;
+            board.innerHTML = '';
+
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.classList.add('card');
+                cardElement.dataset.index = index;
+
+                cardElement.innerHTML = `
+                    <div class="card-face card-front">G</div>
+                    <div class="card-face card-back">
+                        <img src="${card.img}" alt="George">
+                    </div>
+                `;
+
+                cardElement.addEventListener('click', () => flipCard(index, cardElement));
+                board.appendChild(cardElement);
+            });
+        }
+
+        function flipCard(index, element) {
+            if (isLocked) return;
+            if (element.classList.contains('flipped') || cards[index].matched) return;
+
+            element.classList.add('flipped');
+            flippedCards.push({ index, element, img: cards[index].img });
+
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('stats').innerText = `Moves: ${moves}`;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+
+            if (card1.img === card2.img) {
+                cards[card1.index].matched = true;
+                cards[card2.index].matched = true;
+                matchedPairs++;
+                flippedCards = [];
+
+                if (matchedPairs === totalPairs) {
+                    // Перемога рівня — обов'язкова фінальна фраза!
+                    setTimeout(() => speak('win'), 400);
+                } else {
+                    // Збіг: коментуємо приблизно кожні 3-й успіх
+                    matchCounter++;
+                    if (matchCounter >= 3) {
+                        matchCounter = 0;
+                        speak('match');
+                    }
+                }
+            } else {
+                isLocked = true;
+                // Помилка: коментуємо приблизно кожну 3-ю чи 4-ту помилку
+                errorCounter++;
+                if (errorCounter >= 3) {
+                    errorCounter = 0;
+                    speak('error');
+                }
+
+                setTimeout(() => {
+                    card1.element.classList.remove('flipped');
+                    card2.element.classList.remove('flipped');
+                    flippedCards = [];
+                    isLocked = false;
+                }, 1000);
+            }
+        }
+    </script>
+</body>
+</html>
